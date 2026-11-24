@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gửi Người Đặc Biệt ✨</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải Google Fonts tiếng Việt mềm mại, thanh lịch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tải Tone.js để tạo âm thanh mở khóa / mở thư nhẹ nhàng không cần file ngoài -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        :root {
+            --sky-blue: #33aaee;
+            --lavender: #ceb1eb;
+            --cream-white: #fdfbf7;
+            --soft-ink: #3b3547;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #e8f5fe 0%, #f3ebfc 50%, #fdfbf7 100%);
+            color: var(--soft-ink);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .font-serif-elegant {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .font-handwriting {
+            font-family: 'Dancing Script', cursive;
+        }
+
+        /* Hiệu ứng rung khi nhập sai mật khẩu */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            15%, 45%, 75% { transform: translateX(-8px); }
+            30%, 60%, 90% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Hiệu ứng trôi nổi nhẹ nhàng cho các đốm sáng nền */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-18px) scale(1.04); }
+        }
+        .blob-float {
+            animation: floatSlow 8s ease-in-out infinite;
+        }
+
+        /* Hiệu ứng phong bì thư 3D */
+        .envelope-wrapper {
+            perspective: 1200px;
+        }
+
+        .envelope {
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+            height: 250px;
+            background: linear-gradient(145deg, #d8bef2, #c4a1e8);
+            border-radius: 16px;
+            box-shadow: 0 20px 45px rgba(154, 123, 194, 0.28);
+            transition: transform 0.6s ease, opacity 0.6s ease;
+        }
+
+        /* Nắp trên phong bì */
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 135px;
+            background: linear-gradient(180deg, #b891e0 0%, #ceb1eb 100%);
+            clip-path: polygon(0 0, 50% 100%, 100% 0);
+            transform-origin: top center;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.2s 0.4s;
+            z-index: 30;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        .envelope.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 5;
+        }
+
+        /* Túi phong bì phía trước (2 bên và đáy) */
+        .envelope-pocket {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            pointer-events: none;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .envelope-pocket::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 100%);
+            clip-path: polygon(0 0, 52% 55%, 0 100%);
+        }
+
+        .envelope-pocket::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(225deg, rgba(255,255,255,0.22) 0%, rgba(169, 132, 212, 0.25) 100%);
+            clip-path: polygon(100% 0, 48% 55%, 100% 100%);
+        }
+
+        .envelope-bottom {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, #c19ce6 0%, #d4b9f0 100%);
+            clip-path: polygon(0 100%, 50% 48%, 100% 100%);
+            z-index: 21;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            pointer-events: none;
+        }
+
+        /* Tờ thư nằm bên trong phong bì */
+        .letter-preview {
+            position: absolute;
+            left: 7%;
+            right: 7%;
+            bottom: 14px;
+            height: 200px;
+            background: var(--cream-white);
+            border-radius: 12px;
+            z-index: 10;
+            padding: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .envelope.open .letter-preview {
+            transform: translateY(-115px);
+        }
+
+        /* Con dấu sáp trái tim trên phong bì */
+        .wax-seal {
+            position: absolute;
+            top: 112px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 54px;
+            height: 54px;
+            background: radial-gradient(circle at 30% 30%, #56bdf7, #33aaee);
+            border-radius: 50%;
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 16px rgba(51, 170, 238, 0.45), inset 0 2px 4px rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: transform 0.3s ease, opacity 0.4s ease;
+        }
+
+        .wax-seal:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+        }
+
+        .envelope.open .wax-seal {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.6);
+        }
+
+        /* Hiệu ứng hiện tấm thiệp chính */
+        @keyframes cardReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .card-reveal {
+            animation: cardReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Nút bấm chấm tròn nhập PIN */
+        .pin-dot {
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .pin-dot.filled {
+            background-color: #33aaee;
+            border-color: #33aaee;
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(51, 170, 238, 0.4);
+        }
+
+        /* Canvas cánh hoa rơi */
+        #petalCanvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Lớp ảnh nền Anime & lớp phủ làm dịu */
+        #bg-image-layer {
+            position: fixed;
+            inset: -24px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: all 0.4s ease;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #bg-overlay-layer {
+            position: fixed;
+            inset: 0;
+            transition: all 0.4s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Tùy chỉnh thanh cuộn mảnh mai */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(206, 177, 235, 0.6);
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="relative flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 selection:bg-[#ceb1eb]/40">
+
+    <!-- Lớp ảnh nền tùy chỉnh (Anime wallpaper) & lớp phủ đảm bảo độ tương phản -->
+    <div id="bg-image-layer"></div>
+    <div id="bg-overlay-layer"></div>
+
+    <!-- Canvas hiệu ứng cánh hoa & đốm sáng bay nhẹ -->
+    <canvas id="petalCanvas"></canvas>
+
+    <!-- Các đốm màu pastel trang trí nền (hiển thị khi chưa dùng ảnh nền) -->
+    <div id="pastelBlobs" class="transition-opacity duration-500">
+        <div class="fixed top-[-10%] left-[-8%] w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-[#33aaee]/15 blur-3xl pointer-events-none blob-float z-[2]"></div>
+        <div class="fixed bottom-[-10%] right-[-8%] w-80 h-80 sm:w-[28rem] sm:h-[28rem] rounded-full bg-[#ceb1eb]/30 blur-3xl pointer-events-none blob-float z-[2]" style="animation-delay: -4s;"></div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- KHU VỰC CẤU HÌNH NỘI DUNG THIỆP (BẠN CÓ THỂ SỬA TRỰC TIẾP TRONG CODE) -->
+    <!-- ===================================================================== -->
+    <script>
+        /**
+         * HƯỚNG DẪN TÙY CHỈNH NHANH CHO CHỦ NHÂN THIỆP:
+         * 1. Sửa giá trị trong đối tượng `DEFAULT_CARD_DATA` bên dưới.
+         * 2. Đổi `password` thành mật khẩu bí mật của riêng hai bạn (ví dụ ngày kỷ niệm: "2411").
+         * 3. Để chèn ảnh nền Anime: dán link ảnh từ Google (đuôi .jpg/.png/.webp) hoặc tên file
+         *    để cùng thư mục (ví dụ "bg.jpg") vào trường `bgImageUrl`.
+         * 4. Khi người nhận đọc xong và bạn muốn "khóa riêng tư", chỉ cần đổi `password`
+         *    thành một chuỗi ngẫu nhiên khác (ví dụ "LOCKED_9999") rồi lưu/deploy lại!
+         */
+        const DEFAULT_CARD_DATA = {
+            password: "1234", // <-- ĐỔI MẬT KHẨU TẠI ĐÂY
+            passwordHint: "4 chữ số mặc định thử nghiệm (1234)", // <-- Gợi ý nhỏ nếu họ quên
+            bgImageUrl: "", // <-- DÁN LINK ẢNH ANIME HOẶC TÊN FILE (VD: "bg.jpg") TẠI ĐÂY
+            bgBlur: 4, // <-- Độ làm mờ ảnh nền (0 đến 16 px)
+            bgOverlay: 35, // <-- Độ phủ tối/mờ dịu để dễ đọc chữ (0 đến 85 %)
+            badgeText: "Gửi riêng cho cậu ✨",
+            dateText: "Ngày 24 tháng 11, 2026",
+            title: "Cảm ơn vì đã xuất hiện thật dịu dàng...",
+            paragraphs: [
+                "Có những điều nhỏ bé nhưng lại khiến cả một ngày dài trở nên ấm áp hơn rất nhiều. Với tớ, sự hiện diện và những câu chuyện cùng cậu chính là một điều đặc biệt như thế.",
+                "Mong rằng dù ngoài kia có bận rộn đến đâu, cậu vẫn luôn giữ được nụ cười tươi tắn, bình yên trong lòng và nhận được thật nhiều yêu thương xứng đáng.",
+                "Cảm ơn cậu đã dành chút thời gian mở chiếc thiệp bí mật này nhé!"
+            ],
+            signatureLabel: "Thương mến,",
+            signatureName: "Người gửi bí mật 💙"
+        };
+    </script>
+
+    <!-- ===================================================================== -->
+    <!-- MÀN HÌNH 1: KHÓA MẬT KHẨU                                             -->
+    <!-- ===================================================================== -->
+    <main id="lockScreen" class="relative z-10 w-full max-w-md transition-all duration-500">
+        <div id="lockCard" class="bg-[#fdfbf7]/85 backdrop-blur-xl border border-white/80 rounded-3xl shadow-[0_20px_50px_rgba(148,130,180,0.18)] p-6 sm:p-8 text-center">
+            
+            <!-- Biểu tượng ổ khóa pastel -->
+            <div class="mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#33aaee]/20 to-[#ceb1eb]/35 flex items-center justify-center shadow-inner border border-white">
+                <svg class="w-8 h-8 text-[#33aaee]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+            </div>
+
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wide bg-[#ceb1eb]/25 text-[#6d4c94] mb-2">
+                Không gian riêng tư
+            </span>
+
+            <h1 class="font-serif-elegant text-2xl sm:text-3xl font-bold text-[#2f293b] mb-1">
+                Có một lời nhắn dành cho bạn
+            </h1>
+            <p class="text-sm text-[#6b627a] mb-6">
+                Nhập mật mã bí mật để mở phong bì thư nhé
+            </p>
+
+            <!-- Ô nhập mật khẩu hỗ trợ cả bàn phím và bấm nút số -->
+            <form id="passwordForm" class="space-y-4">
+                <div class="relative max-w-[240px] mx-auto">
+                    <input 
+                        type="password" 
+                        id="passwordInput" 
+                        inputmode="numeric"
+                        autocomplete="off"
+                        placeholder="Nhập mật khẩu..."
+                        class="w-full text-center tracking-[0.35em] font-semibold text-lg py-3 px-4 rounded-2xl bg-white/90 border-2 border-[#ceb1eb]/50 focus:border-[#33aaee] focus:outline-none focus:ring-4 focus:ring-[#33aaee]/15 text-[#2f293b] placeholder:tracking-normal placeholder:font-normal placeholder:text-sm transition-all"
+                    />
+                </div>
+
+                <!-- Thông báo lỗi / gợi ý -->
+                <div class="min-h-[22px] flex items-center justify-center">
+                    <p id="errorMsg" class="text-xs font-medium text-rose-500 hidden">
+                        Mật mã chưa đúng rồi, thử lại nhé!
+                    </p>
+                    <p id="hintText" class="text-xs font-medium text-[#33aaee] hidden">
+                        <!-- Gợi ý sẽ hiển thị ở đây -->
+                    </p>
+                </div>
+
+                <!-- Bàn phím số mini tinh tế (tiện bấm trên điện thoại) -->
+                <div class="grid grid-cols-3 gap-2.5 max-w-[240px] mx-auto pt-1 select-none">
+                    <button type="button" data-num="1" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">1</button>
+                    <button type="button" data-num="2" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">2</button>
+                    <button type="button" data-num="3" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">3</button>
+                    <button type="button" data-num="4" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">4</button>
+                    <button type="button" data-num="5" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">5</button>
+                    <button type="button" data-num="6" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">6</button>
+                    <button type="button" data-num="7" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">7</button>
+                    <button type="button" data-num="8" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">8</button>
+                    <button type="button" data-num="9" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">9</button>
+                    <button type="button" id="clearPinBtn" class="py-2.5 rounded-xl bg-[#ceb1eb]/20 hover:bg-[#ceb1eb]/35 active:scale-95 text-xs font-semibold text-[#6d4c94] transition">Xóa</button>
+                    <button type="button" data-num="0" class="num-btn py-2.5 rounded-xl bg-white/80 hover:bg-[#33aaee]/10 active:scale-95 border border-[#ceb1eb]/30 font-semibold text-[#3b3547] shadow-sm transition">0</button>
+                    <button type="button" id="backspacePinBtn" aria-label="Xóa một ký tự" class="py-2.5 rounded-xl bg-[#ceb1eb]/20 hover:bg-[#ceb1eb]/35 active:scale-95 flex items-center justify-center text-[#6d4c94] transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.211-.211.498-.33.796-.33H19.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-9.284c-.298 0-.585-.119-.796-.33z" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Nút mở khóa -->
+                <div class="pt-2">
+                    <button 
+                        type="submit" 
+                        class="w-full max-w-[240px] py-3 px-6 rounded-2xl bg-gradient-to-r from-[#33aaee] to-[#879af2] hover:from-[#269be0] hover:to-[#768ae8] text-white font-semibold shadow-lg shadow-[#33aaee]/25 active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                        Mở khóa thiệp ✨
+                    </button>
+                </div>
+            </form>
+
+            <!-- Nút gợi ý nhỏ tinh tế -->
+            <div class="mt-5 pt-4 border-t border-[#ceb1eb]/25 flex items-center justify-center">
+                <button type="button" id="toggleHintBtn" class="text-xs text-[#887d99] hover:text-[#33aaee] transition flex items-center gap-1 cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                    </svg>
+                    <span>Cần một chút gợi ý?</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MÀN HÌNH 2: PHONG BÌ THƯ CHỜ MỞ (ANIMATION)                          -->
+    <!-- ===================================================================== -->
+    <section id="envelopeStage" class="hidden relative z-10 w-full max-w-md flex flex-col items-center justify-center text-center px-4">
+        <p id="envelopePrompt" class="inline-block px-4 py-1.5 rounded-full bg-[#fdfbf7]/80 backdrop-blur-md border border-white/70 shadow-sm text-sm sm:text-base font-medium text-[#6d4c94] mb-8 animate-pulse">
+            Chạm vào con dấu xanh để mở phong bì thư...
+        </p>
+
+        <div class="envelope-wrapper w-full flex justify-center my-4">
+            <div id="envelopeBox" class="envelope cursor-pointer" title="Nhấn để mở thư">
+                <!-- Nắp trên phong bì -->
+                <div class="envelope-flap"></div>
+                
+                <!-- Tờ thiệp hé lộ bên trong -->
+                <div class="letter-preview border border-[#ceb1eb]/40">
+                    <span class="text-[11px] uppercase tracking-widest text-[#33aaee] font-semibold mb-1">Dành tặng bạn</span>
+                    <p id="previewTitle" class="font-serif-elegant text-lg font-bold text-[#2f293b] line-clamp-2">
+                        Cảm ơn vì đã xuất hiện thật dịu dàng...
+                    </p>
+                    <div class="mt-2 w-10 h-0.5 bg-[#ceb1eb] rounded-full"></div>
+                </div>
+
+                <!-- Hai mép túi phong bì & đáy -->
+                <div class="envelope-pocket"></div>
+                <div class="envelope-bottom"></div>
+
+                <!-- Con dấu sáp trái tim -->
+                <button type="button" id="openEnvelopeBtn" aria-label="Mở phong bì" class="wax-seal">
+                    <svg class="w-6 h-6 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- MÀN HÌNH 3: NỘI DUNG TẤM THIỆP HOÀN CHỈNH                             -->
+    <!-- ===================================================================== -->
+    <section id="cardStage" class="hidden relative z-10 w-full max-w-xl my-6">
+        <article class="card-reveal bg-[#fdfbf7]/92 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_25px_60px_rgba(128,108,163,0.2)] p-6 sm:p-10 md:p-12 relative overflow-hidden">
+            
+            <!-- Viền trang trí mảnh bên trong tấm thiệp -->
+            <div class="absolute inset-3 sm:inset-4 border border-[#ceb1eb]/45 rounded-[1.5rem] pointer-events-none"></div>
+
+            <!-- Hoa văn góc trên bên phải -->
+            <div class="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-gradient-to-bl from-[#33aaee]/20 to-[#ceb1eb]/25 pointer-events-none"></div>
+
+            <div class="relative z-10">
+                <!-- Huy hiệu & Ngày tháng -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-6">
+                    <span id="cardBadge" class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-[#33aaee]/15 to-[#ceb1eb]/25 text-[#4a6fa5]">
+                        Gửi riêng cho cậu ✨
+                    </span>
+                    <span id="cardDate" class="text-xs sm:text-sm italic font-serif-elegant text-[#7c728c]">
+                        Ngày 24 tháng 11, 2026
+                    </span>
+                </div>
+
+                <!-- Tiêu đề thiệp -->
+                <h2 id="cardTitle" class="font-serif-elegant text-2xl sm:text-3xl md:text-4xl font-bold text-[#2c2538] leading-snug mb-6">
+                    Cảm ơn vì đã xuất hiện thật dịu dàng...
+                </h2>
+
+                <!-- Đường kẻ phân cách tinh tế -->
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="h-[1px] flex-1 bg-gradient-to-r from-[#33aaee]/40 to-transparent"></div>
+                    <span class="text-[#33aaee] text-sm">✦</span>
+                    <div class="h-[1px] flex-1 bg-gradient-to-l from-[#ceb1eb]/60 to-transparent"></div>
+                </div>
+
+                <!-- Nội dung lời nhắn -->
+                <div id="cardBody" class="space-y-4 text-sm sm:text-base leading-relaxed text-[#433c52] font-normal">
+                    <!-- Các đoạn văn sẽ được render từ dữ liệu -->
+                </div>
+
+                <!-- Chữ ký cuối thiệp -->
+                <div class="mt-8 pt-6 border-t border-[#ceb1eb]/30 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                    <div>
+                        <p id="cardSignatureLabel" class="text-xs sm:text-sm text-[#7c728c] mb-1">
+                            Thương mến,
+                        </p>
+                        <p id="cardSignatureName" class="font-handwriting text-2xl sm:text-3xl text-[#33aaee] font-bold">
+                            Người gửi bí mật 💙
+                        </p>
+                    </div>
+
+                    <!-- Các nút tương tác nhẹ nhàng -->
+                    <div class="flex items-center gap-2 self-start sm:self-end">
+                        <button type="button" id="sparkleBurstBtn" class="px-3.5 py-2 rounded-xl bg-[#ceb1eb]/25 hover:bg-[#ceb1eb]/40 text-[#5e4182] text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer" title="Thả thêm cánh hoa">
+                            <span>🌸</span>
+                            <span>Thả hoa</span>
+                        </button>
+                        <button type="button" id="lockAgainBtn" class="px-3.5 py-2 rounded-xl bg-[#33aaee]/15 hover:bg-[#33aaee]/25 text-[#2284bd] text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer" title="Khóa lại thiệp">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                            </svg>
+                            <span>Khóa lại</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- NÚT KÍN ĐÁO Ở GÓC DƯỚI CHO CHỦ NHÂN THIỆP (TÙY CHỈNH / HƯỚNG DẪN)     -->
+    <!-- ===================================================================== -->
+    <button 
+        type="button" 
+        id="ownerSettingsBtn" 
+        aria-label="Tùy chỉnh thiệp & hướng dẫn"
+        title="Chỉnh sửa nhanh / Hướng dẫn đổi mật khẩu"
+        class="fixed bottom-4 right-4 z-40 p-2.5 rounded-full bg-white/70 hover:bg-white backdrop-blur-md border border-[#ceb1eb]/40 text-[#7c728c] hover:text-[#33aaee] shadow-sm transition-all opacity-65 hover:opacity-100 cursor-pointer"
+    >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+        </svg>
+    </button>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL CHỈNH SỬA NHANH & HƯỚNG DẪN CHUYỂN RIÊNG TƯ CHO CHỦ NHÂN        -->
+    <!-- ===================================================================== -->
+    <div id="ownerModal" class="hidden fixed inset-0 z-50 bg-[#231d2e]/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#fdfbf7] border border-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-7 relative">
+            <div class="flex items-center justify-between pb-3 border-b border-[#ceb1eb]/30 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#33aaee]"></span>
+                    <h3 class="font-bold text-base sm:text-lg text-[#2f293b]">Góc Chủ Nhân Thiệp</h3>
+                </div>
+                <button type="button" id="closeOwnerModal" class="p-1.5 rounded-xl hover:bg-[#ceb1eb]/20 text-[#6b627a] transition cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Hướng dẫn cách khóa riêng tư sau khi người nhận đọc xong -->
+            <div class="bg-gradient-to-r from-[#33aaee]/10 to-[#ceb1eb]/20 border border-[#33aaee]/20 rounded-2xl p-3.5 mb-5 text-xs text-[#3b3547] space-y-1.5">
+                <p class="font-bold text-[#2284bd] flex items-center gap-1.5">
+                    <span>🔒</span> Cách đặt mật khẩu, ảnh nền & khóa "Riêng tư":
+                </p>
+                <p>1. <strong>Chèn ảnh nền Anime:</strong> Dán link ảnh từ Google (chuột phải vào ảnh → <em>Sao chép địa chỉ hình ảnh</em>) hoặc tên file cùng thư mục (vd: <code class="bg-white/80 px-1 py-0.5 rounded text-[#6d4c94] font-semibold">bg.jpg</code>). Bạn cũng có thể chọn ảnh từ máy để xem thử ngay.</p>
+                <p>2. <strong>Gửi link online:</strong> Bấm <em>Chép cấu hình code</em> bên dưới và dán đè vào <code class="bg-white/80 px-1 py-0.5 rounded text-[#6d4c94] font-semibold">DEFAULT_CARD_DATA</code> ở đầu file HTML rồi up lên Netlify / GitHub Pages.</p>
+                <p>3. <strong>Chuyển riêng tư sau khi họ đọc xong:</strong> Đổi <code class="bg-white/80 px-1 py-0.5 rounded text-[#6d4c94] font-semibold">password</code> trong code thành mật khẩu mới (hoặc tắt trang trên host) là link cũ sẽ tự động khóa lại!</p>
+            </div>
+
+            <!-- Form chỉnh sửa xem thử trực tiếp -->
+            <form id="editorForm" class="space-y-3.5 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-[#5a5169] mb-1">Mật khẩu mở thiệp</label>
+                        <input type="text" id="editPassword" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-[#5a5169] mb-1">Gợi ý mật khẩu</label>
+                        <input type="text" id="editHint" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Khu vực tùy chỉnh ảnh nền Anime -->
+                <div class="p-3.5 rounded-2xl bg-white/75 border border-[#ceb1eb]/45 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label class="block text-xs font-bold text-[#4a3f5c]">🖼️ Link ảnh nền (hoặc tên file như bg.jpg)</label>
+                        <div class="flex items-center gap-1.5">
+                            <label for="bgFilePicker" class="px-2.5 py-1 rounded-lg bg-[#33aaee]/15 hover:bg-[#33aaee]/25 text-[#2284bd] text-[11px] font-semibold cursor-pointer transition">
+                                📁 Chọn ảnh từ máy
+                            </label>
+                            <input type="file" id="bgFilePicker" accept="image/*" class="hidden">
+                            <button type="button" id="clearBgBtn" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-semibold cursor-pointer transition">
+                                Xóa ảnh nền
+                            </button>
+                        </div>
+                    </div>
+
+                    <input 
+                        type="text" 
+                        id="editBgUrl" 
+                        placeholder="Dán link ảnh Google (https://...) hoặc nhập bg.jpg" 
+                        class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none text-xs"
+                    >
+
+                    <!-- Hai thanh trượt chỉnh độ làm mờ và độ phủ tối/mờ dịu -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <div class="flex justify-between text-[11px] font-semibold text-[#5a5169] mb-1">
+                                <span>Độ làm mờ nền (Blur)</span>
+                                <span id="blurValLabel" class="text-[#33aaee]">4px</span>
+                            </div>
+                            <input type="range" id="editBgBlur" min="0" max="16" step="1" value="4" class="w-full accent-[#33aaee] cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[11px] font-semibold text-[#5a5169] mb-1">
+                                <span>Độ phủ tối/mờ dịu (Overlay)</span>
+                                <span id="overlayValLabel" class="text-[#6d4c94]">35%</span>
+                            </div>
+                            <input type="range" id="editBgOverlay" min="0" max="85" step="5" value="35" class="w-full accent-[#ceb1eb] cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-[#5a5169] mb-1">Nhãn nhỏ góc trên</label>
+                        <input type="text" id="editBadge" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-[#5a5169] mb-1">Ngày tháng</label>
+                        <input type="text" id="editDate" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-[#5a5169] mb-1">Tiêu đề tấm thiệp</label>
+                    <input type="text" id="editTitle" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-[#5a5169] mb-1">Nội dung lời nhắn (mỗi lần xuống dòng là 1 đoạn)</label>
+                    <textarea id="editMessage" rows="4" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none leading-relaxed"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-[#5a5169] mb-1">Lời chào kết</label>
+                        <input type="text" id="editSigLabel" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-[#5a5169] mb-1">Chữ ký của bạn</label>
+                        <input type="text" id="editSigName" class="w-full px-3 py-2 rounded-xl bg-white border border-[#ceb1eb]/60 focus:border-[#33aaee] focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Thông báo trạng thái lưu -->
+                <p id="editorToast" class="text-xs font-semibold text-emerald-600 hidden">
+                    ✓ Đã cập nhật nội dung thiệp!
+                </p>
+
+                <div class="pt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#ceb1eb]/30">
+                    <button type="button" id="copyCodeBtn" class="px-3.5 py-2 rounded-xl bg-[#ceb1eb]/25 hover:bg-[#ceb1eb]/40 text-[#5e4182] text-xs font-semibold transition cursor-pointer">
+                        📋 Chép cấu hình code
+                    </button>
+                    <div class="flex items-center gap-2">
+        // 2. Render dữ liệu vào giao diện thiệp & cập nhật lớp ảnh nền
+        function applyBackgroundLayer(url, blurPx, overlayPercent) {
+            const bgLayer = document.getElementById('bg-image-layer');
+            const overlayLayer = document.getElementById('bg-overlay-layer');
+            const pastelBlobs = document.getElementById('pastelBlobs');
+            const cleanUrl = (url || '').trim();
+            const safeBlur = Number.isFinite(Number(blurPx)) ? Number(blurPx) : 4;
+            const safeOverlay = Number.isFinite(Number(overlayPercent)) ? Number(overlayPercent) : 35;
+
+            if (cleanUrl) {
+                // Escape dấu ngoặc kép/nháy đơn an toàn khi gán CSS url()
+                const escapedUrl = cleanUrl.replace(/"/g, '\\"');
+                bgLayer.style.backgroundImage = `url("${escapedUrl}")`;
+                bgLayer.style.filter = `blur(${safeBlur}px)`;
+                bgLayer.style.opacity = '1';
+
+                // Lớp phủ gradient dịu mắt giúp chữ và phong bì luôn nổi bật trên nền anime
+                const alpha = (safeOverlay / 100).toFixed(2);
+                const softAlpha = Math.max(0.08, (safeOverlay / 100) * 0.72).toFixed(2);
+                overlayLayer.style.background = `linear-gradient(135deg, rgba(28, 22, 42, ${alpha}) 0%, rgba(56, 44, 78, ${softAlpha}) 50%, rgba(28, 22, 42, ${alpha}) 100%)`;
+                pastelBlobs.classList.add('opacity-0');
+            } else {
+                // Trở về nền pastel xanh thiên thanh - tím oải hương mặc định
+                bgLayer.style.backgroundImage = 'none';
+                bgLayer.style.filter = 'none';
+                bgLayer.style.opacity = '0';
+                overlayLayer.style.background = 'transparent';
+                pastelBlobs.classList.remove('opacity-0');
+            }
+        }
+
+        function applyCardDataToDOM() {
+            document.getElementById('hintText').textContent = `Gợi ý: ${cardData.passwordHint}`;
+            document.getElementById('previewTitle').textContent = cardData.title;
+            document.getElementById('cardBadge').textContent = cardData.badgeText;
+            document.getElementById('cardDate').textContent = cardData.dateText;
+            document.getElementById('cardTitle').textContent = cardData.title;
+            document.getElementById('cardSignatureLabel').textContent = cardData.signatureLabel;
+            document.getElementById('cardSignatureName').textContent = cardData.signatureName;
+
+            applyBackgroundLayer(cardData.bgImageUrl, cardData.bgBlur, cardData.bgOverlay);
+
+            const bodyContainer = document.getElementById('cardBody');
+            bodyContainer.innerHTML = '';
+            cardData.paragraphs.forEach(text => {
+                if (text.trim()) {
+                    const p = document.createElement('p');
+                    p.textContent = text;
+                    bodyContainer.appendChild(p);
+                }
+            });
+        }
+
+        // 3. Hiệu ứng âm thanh dịu nhẹ bằng Tone.js (tổng hợp trực tiếp, không cần URL ngoài)
+        async function playChimeSound(type = 'unlock') {
+            try {
+                if (typeof Tone === 'undefined') return;
+                await Tone.start();
+                const synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.05, decay: 0.4, sustain: 0.2, release: 1.2 }
+                }).toDestination();
+                synth.volume.value = -12;
+
+                const now = Tone.now();
+                if (type === 'unlock') {
+                    // Hợp âm mở khóa trong trẻo
+                    synth.triggerAttackRelease('C5', '8n', now);
+                    synth.triggerAttackRelease('E5', '8n', now + 0.1);
+                    synth.triggerAttackRelease('G5', '4n', now + 0.2);
+                    synth.triggerAttackRelease('B5', '2n', now + 0.32);
+                } else if (type === 'open') {
+                    // Giai điệu mở thiệp lãng mạn
+                    synth.triggerAttackRelease('F5', '8n', now);
+                    synth.triggerAttackRelease('A5', '8n', now + 0.12);
+                    synth.triggerAttackRelease('C6', '4n', now + 0.24);
+                    synth.triggerAttackRelease('E6', '2n', now + 0.38);
+                } else if (type === 'error') {
+                    synth.triggerAttackRelease('E4', '16n', now);
+                    synth.triggerAttackRelease('Eb4', '8n', now + 0.1);
+                }
+            } catch (e) {
+                // Bỏ qua nếu trình duyệt chặn audio tự động
+            }
+        }
+
+        // 4. Xử lý màn hình mật khẩu
+        const lockScreen = document.getElementById('lockScreen');
+        const lockCard = document.getElementById('lockCard');
+        const passwordForm = document.getElementById('passwordForm');
+        const passwordInput = document.getElementById('passwordInput');
+        const errorMsg = document.getElementById('errorMsg');
+        const hintText = document.getElementById('hintText');
+        const toggleHintBtn = document.getElementById('toggleHintBtn');
+
+        // Bấm các phím số trên màn hình
+        document.querySelectorAll('.num-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                passwordInput.value += btn.dataset.num;
+                errorMsg.classList.add('hidden');
+                passwordInput.focus();
+            });
+        });
+
+        document.getElementById('clearPinBtn').addEventListener('click', () => {
+            passwordInput.value = '';
+            errorMsg.classList.add('hidden');
+            passwordInput.focus();
+        });
+
+        document.getElementById('backspacePinBtn').addEventListener('click', () => {
+            passwordInput.value = passwordInput.value.slice(0, -1);
+            errorMsg.classList.add('hidden');
+            passwordInput.focus();
+        });
+
+        toggleHintBtn.addEventListener('click', () => {
+            errorMsg.classList.add('hidden');
+            hintText.classList.toggle('hidden');
+        });
+
+        // Kiểm tra mật khẩu khi submit
+        passwordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const entered = passwordInput.value.trim();
+
+            if (entered === cardData.password) {
+                playChimeSound('unlock');
+                errorMsg.classList.add('hidden');
+                
+                // Chuyển mượt sang màn hình phong bì thư
+                lockScreen.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                setTimeout(() => {
+                    lockScreen.classList.add('hidden');
+                    envelopeStage.classList.remove('hidden');
+                    envelopeStage.classList.add('card-reveal');
+                }, 420);
+            } else {
+                playChimeSound('error');
+                errorMsg.classList.remove('hidden');
+                hintText.classList.add('hidden');
+                lockCard.classList.remove('animate-shake');
+                void lockCard.offsetWidth; // Trigger reflow để chạy lại animation rung
+                lockCard.classList.add('animate-shake');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        });
+
+        // 5. Xử lý mở phong bì thư & chuyển sang nội dung thiệp
+        const envelopeStage = document.getElementById('envelopeStage');
+        const envelopeBox = document.getElementById('envelopeBox');
+        const cardStage = document.getElementById('cardStage');
+        let isEnvelopeOpened = false;
+
+        function handleOpenEnvelope() {
+            if (isEnvelopeOpened) return;
+            isEnvelopeOpened = true;
+
+            playChimeSound('open');
+            envelopeBox.classList.add('open');
+            document.getElementById('envelopePrompt').textContent = 'Đang mở lời nhắn...';
+
+            // Kích hoạt mưa cánh hoa nhẹ nhàng
+            spawnPetalBurst(35);
+
+            // Sau khi nắp phong bì mở và tờ thư trượt lên, hiện tấm thiệp đầy đủ
+            setTimeout(() => {
+                envelopeStage.classList.add('opacity-0', 'scale-95', 'transition-all', 'duration-500');
+                setTimeout(() => {
+                    envelopeStage.classList.add('hidden');
+                    cardStage.classList.remove('hidden');
+                    startGentlePetals();
+                }, 480);
+            }, 1350);
+        }
+
+        envelopeBox.addEventListener('click', handleOpenEnvelope);
+
+        // Nút khóa lại thiệp khi người xem muốn đóng
+        document.getElementById('lockAgainBtn').addEventListener('click', () => {
+            cardStage.classList.add('hidden');
+            envelopeStage.classList.add('hidden');
+            envelopeStage.classList.remove('opacity-0', 'scale-95');
+            envelopeBox.classList.remove('open');
+            document.getElementById('envelopePrompt').textContent = 'Chạm vào con dấu xanh để mở phong bì thư...';
+            isEnvelopeOpened = false;
+            stopGentlePetals();
+
+            passwordInput.value = '';
+            lockScreen.classList.remove('hidden', 'opacity-0', 'scale-95', 'pointer-events-none');
+        });
+
+        document.getElementById('sparkleBurstBtn').addEventListener('click', () => {
+            spawnPetalBurst(28);
+        });
+
+        // 6. Hệ thống Canvas hiệu ứng cánh hoa pastel & đốm sáng lấp lánh
+        const canvas = document.getElementById('petalCanvas');
+        const ctx = canvas.getContext('2d');
+        let petals = [];
+        let animationFrameId = null;
+        let gentleInterval = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const PETAL_COLORS = [
+            'rgba(206, 177, 235, 0.75)', // Tím oải hương
+            'rgba(51, 170, 238, 0.55)',  // Xanh thiên thanh
+            'rgba(244, 194, 219, 0.75)', // Hồng phấn pastel
+            'rgba(255, 255, 255, 0.85)'  // Ánh sáng trắng kem
+        ];
+
+        function createPetal(fromTop = true) {
+            return {
+                x: Math.random() * canvas.width,
+                y: fromTop ? -20 : Math.random() * canvas.height * 0.5,
+                size: Math.random() * 7 + 5,
+                speedY: Math.random() * 1.4 + 0.7,
+                speedX: (Math.random() - 0.5) * 1.2,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.04,
+                swayOffset: Math.random() * Math.PI * 2,
+                color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+                isSparkle: Math.random() > 0.72
+            };
+        }
+
+        function spawnPetalBurst(count = 25) {
+            for (let i = 0; i < count; i++) {
+                petals.push(createPetal(true));
+            }
+            if (!animationFrameId) {
+                animatePetals();
+            }
+        }
+
+        function startGentlePetals() {
+            if (gentleInterval) clearInterval(gentleInterval);
+            gentleInterval = setInterval(() => {
+                if (petals.length < 40) {
+                    petals.push(createPetal(true));
+                    if (!animationFrameId) animatePetals();
+                }
+            }, 550);
+        }
+
+        function stopGentlePetals() {
+            if (gentleInterval) clearInterval(gentleInterval);
+            gentleInterval = null;
+        }
+
+        function animatePetals() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = petals.length - 1; i >= 0; i--) {
+                const p = petals[i];
+                p.y += p.speedY;
+                p.x += p.speedX + Math.sin(p.y * 0.02 + p.swayOffset) * 0.6;
+                p.rotation += p.rotationSpeed;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+                ctx.fillStyle = p.color;
+
+                if (p.isSparkle) {
+                    // Vẽ đốm sáng ngôi sao 4 cánh
+                    ctx.beginPath();
+                    const r = p.size * 0.6;
+                    ctx.moveTo(0, -r);
+                    ctx.quadraticCurveTo(0, 0, r, 0);
+                    ctx.quadraticCurveTo(0, 0, 0, r);
+                    ctx.quadraticCurveTo(0, 0, -r, 0);
+                    ctx.quadraticCurveTo(0, 0, 0, -r);
+                    ctx.fill();
+                } else {
+                    // Vẽ cánh hoa mềm mại
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+
+                if (p.y > canvas.height + 30) {
+                    petals.splice(i, 1);
+                }
+            }
+
+            if (petals.length > 0) {
+                animationFrameId = requestAnimationFrame(animatePetals);
+            } else {
+                animationFrameId = null;
+            }
+        }
+
+        // 7. Xử lý Modal Góc Chủ Nhân Thiệp (Chỉnh sửa nhanh & Copy code)
+        const ownerModal = document.getElementById('ownerModal');
+        const ownerSettingsBtn = document.getElementById('ownerSettingsBtn');
+        const closeOwnerModal = document.getElementById('closeOwnerModal');
+        const editorForm = document.getElementById('editorForm');
+        const editorToast = document.getElementById('editorToast');
+        const editBgUrl = document.getElementById('editBgUrl');
+        const editBgBlur = document.getElementById('editBgBlur');
+        const editBgOverlay = document.getElementById('editBgOverlay');
+        const blurValLabel = document.getElementById('blurValLabel');
+        const overlayValLabel = document.getElementById('overlayValLabel');
+        const bgFilePicker = document.getElementById('bgFilePicker');
+        const clearBgBtn = document.getElementById('clearBgBtn');
+
+        // Cập nhật xem trước ngay lập tức khi kéo thanh trượt hoặc nhập link ảnh
+        function previewBackgroundLive() {
+            const blurVal = Number(editBgBlur.value);
+            const overlayVal = Number(editBgOverlay.value);
+            blurValLabel.textContent = `${blurVal}px`;
+            overlayValLabel.textContent = `${overlayVal}%`;
+            applyBackgroundLayer(editBgUrl.value, blurVal, overlayVal);
+        }
+
+        editBgUrl.addEventListener('input', previewBackgroundLive);
+        editBgBlur.addEventListener('input', previewBackgroundLive);
+        editBgOverlay.addEventListener('input', previewBackgroundLive);
+
+        // Đọc file ảnh từ máy bằng FileReader để xem thử trực tiếp
+        bgFilePicker.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                editBgUrl.value = event.target.result;
+                previewBackgroundLive();
+                editorToast.textContent = '✓ Đã tải ảnh từ máy để xem thử! (Lưu ý: Khi đưa lên web gửi link, hãy dùng link ảnh hoặc đặt file ảnh cạnh file HTML nhé).';
+                editorToast.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Xóa ảnh nền và quay về màu pastel mặc định
+        clearBgBtn.addEventListener('click', () => {
+            editBgUrl.value = '';
+            bgFilePicker.value = '';
+            previewBackgroundLive();
+        });
+
+        ownerSettingsBtn.addEventListener('click', () => {
+            document.getElementById('editPassword').value = cardData.password;
+            document.getElementById('editHint').value = cardData.passwordHint;
+            editBgUrl.value = cardData.bgImageUrl || '';
+            editBgBlur.value = cardData.bgBlur ?? 4;
+            editBgOverlay.value = cardData.bgOverlay ?? 35;
+            blurValLabel.textContent = `${editBgBlur.value}px`;
+            overlayValLabel.textContent = `${editBgOverlay.value}%`;
+
+            document.getElementById('editBadge').value = cardData.badgeText;
+            document.getElementById('editDate').value = cardData.dateText;
+            document.getElementById('editTitle').value = cardData.title;
+            document.getElementById('editMessage').value = cardData.paragraphs.join('\n');
+            document.getElementById('editSigLabel').value = cardData.signatureLabel;
+            document.getElementById('editSigName').value = cardData.signatureName;
+            editorToast.classList.add('hidden');
+            ownerModal.classList.remove('hidden');
+        });
+
+        closeOwnerModal.addEventListener('click', () => {
+            // Khôi phục nền theo dữ liệu đã lưu nếu đóng modal mà chưa bấm Lưu
+            applyBackgroundLayer(cardData.bgImageUrl, cardData.bgBlur, cardData.bgOverlay);
+            ownerModal.classList.add('hidden');
+        });
+
+        ownerModal.addEventListener('click', (e) => {
+            if (e.target === ownerModal) {
+                applyBackgroundLayer(cardData.bgImageUrl, cardData.bgBlur, cardData.bgOverlay);
+                ownerModal.classList.add('hidden');
+            }
+        });
+
+        editorForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('editPassword').value.trim() || '1234';
+            const rawParagraphs = document.getElementById('editMessage').value.split('\n').filter(line => line.trim() !== '');
+
+            cardData = {
+                password: newPassword,
+                passwordHint: document.getElementById('editHint').value.trim(),
+                bgImageUrl: editBgUrl.value.trim(),
+                bgBlur: Number(editBgBlur.value),
+                bgOverlay: Number(editBgOverlay.value),
+                badgeText: document.getElementById('editBadge').value.trim(),
+                dateText: document.getElementById('editDate').value.trim(),
+                title: document.getElementById('editTitle').value.trim(),
+                paragraphs: rawParagraphs.length ? rawParagraphs : ['Gửi đến bạn những điều tốt đẹp nhất!'],
+                signatureLabel: document.getElementById('editSigLabel').value.trim(),
+                signatureName: document.getElementById('editSigName').value.trim()
+            };
+
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cardData));
+            } catch (err) {
+                // Trường hợp ảnh từ máy quá nặng vượt giới hạn localStorage, vẫn giữ trong phiên hiện tại
+            }
+
+            applyCardDataToDOM();
+            editorToast.textContent = '✓ Đã lưu! Bạn có thể đóng bảng này để thử mở khóa và ngắm nền mới.';
+            editorToast.classList.remove('hidden');
+        });
+
+        document.getElementById('resetDefaultBtn').addEventListener('click', () => {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (err) {}
+            cardData = { ...DEFAULT_CARD_DATA };
+            applyCardDataToDOM();
+            ownerModal.classList.add('hidden');
+        });
+
+        // Sao chép đoạn cấu hình DEFAULT_CARD_DATA để dán vào file HTML khi mang đi deploy
+        document.getElementById('copyCodeBtn').addEventListener('click', () => {
+            const exportData = { ...cardData };
+            // Nếu đang dùng ảnh base64 tạm từ máy, nhắc đổi thành tên file hoặc URL gọn nhẹ khi xuất code
+            if (exportData.bgImageUrl && exportData.bgImageUrl.startsWith('data:image')) {
+                exportData.bgImageUrl = 'bg.jpg';
+            }
+            const configSnippet = `const DEFAULT_CARD_DATA = ${JSON.stringify(exportData, null, 4)};`;
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = configSnippet;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            try {
+                document.execCommand('copy');
+                editorToast.textContent = cardData.bgImageUrl && cardData.bgImageUrl.startsWith('data:image')
+                    ? '✓ Đã chép code (ảnh từ máy được đổi thành "bg.jpg" — nhớ để file ảnh cùng thư mục với file HTML nhé)!'
+                    : '✓ Đã sao chép đoạn cấu hình! Bạn chỉ cần dán đè vào đầu file HTML trước khi gửi link.';
+                editorToast.classList.remove('hidden');
+            } catch (err) {
+                editorToast.textContent = 'Không thể tự động sao chép, vui lòng sửa trực tiếp trong file HTML.';
+                editorToast.classList.remove('hidden');
+            }
+            document.body.removeChild(tempTextarea);
+        });
+
+        // Khởi chạy dữ liệu ban đầu khi tải trang
+        window.addEventListener('DOMContentLoaded', () => {
+            applyCardDataToDOM();
+        });
+    </script>
+</body>
+</html>
